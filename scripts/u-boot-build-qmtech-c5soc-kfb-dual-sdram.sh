@@ -174,6 +174,10 @@ export PATH=/home/monklp/workspace/arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-l
 export ARCH=arm
 export CROSS_COMPILE=arm-none-linux-gnueabihf-
 cd $UBOOT_TOP_FOLDER
+make mrproper
+sync
+make clean
+sync
 make socfpga_c5soc_kfb_dual_sdram_defconfig
 sync
 make -j 8 
@@ -198,15 +202,22 @@ export PATH=/home/monklp/workspace/arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-l
 export ARCH=arm
 export CROSS_COMPILE=arm-none-linux-gnueabihf-
 # Configure and build the Linux binaries - zImage , .dtb and kernel modules
+rm -rf modules_install/
+sync
 make mrproper
 sync
 make clean
 sync
 make socfpga_defconfig
+sync
 make -j 8 zImage Image dtbs modules
+sync
 make -j 8 modules_install INSTALL_MOD_PATH=modules_install
+sync
 rm -rf modules_install/lib/modules/*/build
+sync
 rm -rf modules_install/lib/modules/*/source
+sync
 
 # Start preparing/linking the produced binaries
 cd $BUILD_ENV_FOLDER
@@ -217,7 +228,7 @@ mkdir -p $LINUX_BIN_DIR/a9
 cd $LINUX_TOP_FOLDER
 ln -s $LINUX_TOP_FOLDER/arch/arm/boot/zImage $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/arch/arm/boot/Image $LINUX_BIN_DIR/a9/
-ln -s $LINUX_TOP_FOLDER/arch/arm/boot/dts/socfpga_cyclone5_kfb_dual_sdram.dtb $LINUX_BIN_DIR/a9/
+ln -s $LINUX_TOP_FOLDER/arch/arm/boot/dts/intel/socfpga/socfpga_cyclone5_kfb_dual_sdram.dtb $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/modules_install/lib/modules $LINUX_BIN_DIR/a9/
 
 # Prepare the configuration and start building the rootfs (using Yoctoy/poky)
@@ -235,26 +246,29 @@ cd $BUILD_ENV_FOLDER/scripts
 # wget https://releases.rocketboards.org/2021.04/gsrd/tools/make_sdimage_p3.py
 chmod +x make_sdimage_p3.py
 
-# Create sd card top folder
+# Create sd card top folder:
 cd $BUILD_ENV_FOLDER #
 sudo rm -rf sd_card && mkdir sd_card && cd sd_card
-# Prepare the FAT partition
+# Prepare the FAT partition:
 mkdir sdfs &&  cd sdfs
 export SD_CARD_FS=`pwd`
 cp $LINUX_BIN_DIR/a9/zImage .
-cp $LINUX_BIN_DIR/a9/socfpga_cyclone5_socdk.dtb .
+sync
+cp $LINUX_BIN_DIR/a9/socfpga_cyclone5_kfb_dual_sdram.dtb .
+sync
 mkdir extlinux
 echo "LABEL Linux Default" > extlinux/extlinux.conf
 echo "    KERNEL ../zImage" >> extlinux/extlinux.conf
 echo "    FDT ../socfpga_cyclone5_kfb_dual_sdram.dtb" >> extlinux/extlinux.conf
 echo "    APPEND root=/dev/mmcblk0p2 rw rootwait earlyprintk console=ttyS0,115200n8" >> extlinux/extlinux.conf
-
+# Prepare Rootfs partition:
 cd $BUILD_ENV_FOLDER/sd_card
 sudo rm -rf rootfs
 mkdir rootfs && cd rootfs
-sudo tar xf $LINUX_BIN/a9/core-image-minimal-cyclone5.tar.gz
+sudo tar xf $LINUX_BIN_DIR/a9/core-image-minimal-cyclone5.tar.gz
+sync
 sudo rm -rf lib/modules/*
-sudo cp -r $LINUX_BIN/a9/modules/* lib/modules  
+sudo cp -r $LINUX_BIN_DIR/a9/modules/* lib/modules  
 
 
 
