@@ -151,6 +151,8 @@ export LINUX_TOP_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/linux-socfp
 export ROOTFS_TOP_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/rootfs-socfpga'                  # 'main' branch (take the latest commits)
 export BUILD_ENV_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/qmtech_linux_build_env'           # 'main' branch (take the latest commit)
 
+export SDCARD_DEVICE=/dev/sdb
+
 echo $GHRD_TOP_FOLDER
 echo $UBOOT_TOP_FOLDER
 echo $LINUX_TOP_FOLDER
@@ -285,15 +287,18 @@ sudo python3 $BUILD_ENV_FOLDER/scripts/make_sdimage_p3.py -f \
 -s 512M \
 -n sdcard_cv.img
 
-
-
-
-
-
+# Write the image file directly to the SD Card:
+cd $BUILD_ENV_FOLDER/sd_card
+sudo dd if=sdcard_cv.img of=$SDCARD_DEVICE bs=512 conv=sync
+sync
+sudo umount $SDCARD_DEVICE*
+sync
+sudo eject $SDCARD_DEVICE
+sync
 
 
 # Here is a code snippet of commands you can run to create the partitions, set the partition type, and format the partitions.
-export SDCARD_DEV=/dev/sdb
+export SDCARD_DEVICE=/dev/sdb
 sudo umount $SDCARD_DEV*
 sync
 sudo wipefs -a $SDCARD_DEV        # wipes partition table and filesystem signatures

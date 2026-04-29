@@ -452,7 +452,7 @@ def get_mkfs_params_from_format(pformat):
     params = ""
 
     if re.search("fat32", pformat):
-        params = ["-F32","-I"]
+        params = ["-F 32","-I"]
     elif re.search("vfat", pformat):
         params = ["-I"]
 
