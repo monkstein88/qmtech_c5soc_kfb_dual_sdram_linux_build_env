@@ -230,6 +230,7 @@ ln -s $LINUX_TOP_FOLDER/arch/arm/boot/zImage $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/arch/arm/boot/Image $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/arch/arm/boot/dts/intel/socfpga/socfpga_cyclone5_kfb_dual_sdram.dtb $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/modules_install/lib/modules $LINUX_BIN_DIR/a9/
+sync
 
 # Prepare the configuration and start building the rootfs (using Yoctoy/poky)
 cd $ROOTFS_TOP_FOLDER/cyclone5
@@ -240,6 +241,7 @@ echo 'BBLAYERS += " ${TOPDIR}/../meta-intel-fpga "' >> conf/bblayers.conf
 echo 'CORE_IMAGE_EXTRA_INSTALL += "openssh gdbserver"' >> conf/local.conf
 bitbake core-image-minimal
 ln -s $ROOTFS_TOP_FOLDER/cyclone5/build/tmp/deploy/images/cyclone5/core-image-minimal-cyclone5.tar.gz $LINUX_BIN_DIR/a9/
+sync
 
 # Go to the script folder and prepare SD Card image writer script 
 cd $BUILD_ENV_FOLDER/scripts 
@@ -251,7 +253,6 @@ cd $BUILD_ENV_FOLDER #
 sudo rm -rf sd_card && mkdir sd_card && cd sd_card
 # Prepare the FAT partition:
 mkdir sdfs &&  cd sdfs
-export SD_CARD_FS=`pwd`
 cp $LINUX_BIN_DIR/a9/zImage .
 sync
 cp $LINUX_BIN_DIR/a9/socfpga_cyclone5_kfb_dual_sdram.dtb .
@@ -267,13 +268,22 @@ sudo rm -rf rootfs
 mkdir rootfs && cd rootfs
 sudo tar xf $LINUX_BIN_DIR/a9/core-image-minimal-cyclone5.tar.gz
 sync
-sudo rm -rf lib/modules/*
-sudo cp -r $LINUX_BIN_DIR/a9/modules/* lib/modules  
+sudo rm -rf lib/modules/*  # 'lib/modules/*' directory does not exist under rootfs (core-image-minimal-cyclone5.tar.gz)
+sudo cp -r $LINUX_BIN_DIR/a9/modules lib/  
+# Copy over the U-boot bootable binary file:
+cd $BUILD_ENV_FOLDER/sd_card
+rm -rf uboot && mkdir uboot  && cd uboot
+cp $UBOOT_TOP_FOLDER/u-boot-with-spl.sfp .
+sync
 
-
-
-
-
+# Prepare and create the SD card image (.img) file:
+cd $BUILD_ENV_FOLDER/sd_card
+sudo python3 $BUILD_ENV_FOLDER/scripts/make_sdimage_p3.py -f \
+-P uboot/u-boot-with-spl.sfp,num=3,format=raw,size=10M,type=A2  \
+-P sdfs/*,num=1,format=fat32,size=100M \
+-P rootfs/*,num=2,format=ext3,size=300M \
+-s 512M \
+-n sdcard_cv.img
 
 
 
