@@ -145,19 +145,22 @@ sudo sync
 
 # ================================
 
-export GHRD_TOP_FOLDER='/home/monklp/workspace/GITHUB/@monkstein88/qmtech_c5soc_kfb_dual_sdram_ghrd'  # 'main' branch
-export UBOOT_TOP_FOLDER='/home/monklp/workspace/GITHUB/@monkstein88/u-boot-socfpga'                   # 'qmtech_c5soc_kfb_dual_sdram_v2024.07' branch
-export LINUX_TOP_FOLDER='/home/monklp/workspace/GITHUB/@monkstein88/linux-socfpga.a9'                 # 'socfpga-6.6.22-lts' branch
-export BUILD_ENV_FOLDER='/home/monklp/workspace/GITHUB/@monkstein88/qmtech_c5soc_kfb_dual_sdram_linux_build_env'  # 'main' branch
+export GHRD_TOP_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/qmtech_c5soc_kfb_dual_sdram_ghrd'  # 'main' branch (take the latest commits)
+export UBOOT_TOP_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/u-boot-socfpga'                   # 'qmtech_c5soc_kfb_dual_sdram_v2024.07' branch (take the latest commits)
+export LINUX_TOP_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/linux-socfpga.a9'                 # 'socfpga-6.6.22-lts' branch  (take the latest commits)
+export ROOTFS_TOP_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/rootfs-socfpga'                  # 'main' branch (take the latest commits)
+export BUILD_ENV_FOLDER='/home/monklp/workspace/GITHUB/_monkstein88_/qmtech_linux_build_env'           # 'main' branch (take the latest commit)
 
 echo $GHRD_TOP_FOLDER
 echo $UBOOT_TOP_FOLDER
 echo $LINUX_TOP_FOLDER
+echo $ROOTFS_TOP_FOLDER
 echo $BUILD_ENV_FOLDER
 
 cd $GHRD_TOP_FOLDER # directory could be reached. Ok.
 cd $UBOOT_TOP_FOLDER # directory could be reached. Ok.
 cd $LINUX_TOP_FOLDER # directory could be reached. Ok.
+cd $ROOTFS_TOP_FOLDER # directory could be reached. Ok.
 cd $BUILD_ENV_FOLDER # directory could be reached. Ok.
 
 
@@ -217,31 +220,41 @@ ln -s $LINUX_TOP_FOLDER/arch/arm/boot/Image $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/arch/arm/boot/dts/socfpga_cyclone5_kfb_dual_sdram.dtb $LINUX_BIN_DIR/a9/
 ln -s $LINUX_TOP_FOLDER/modules_install/lib/modules $LINUX_BIN_DIR/a9/
 
-# Start Building the rootfs (using Yoctoy/poky)
-cd $LINUX_TOP_FOLDER
-mkdir rootfs && cd rootfs
-export set ROOTFS_TOP_DIR=`pwd`
-cd $ROOTFS_TOP_DIR
-rm -rf cv && mkdir cv && cd cv
-git clone -b kirkstone https://git.yoctoproject.org/poky
-git clone -b kirkstone https://git.yoctoproject.org/meta-intel-fpga
+# Prepare the configuration and start building the rootfs (using Yoctoy/poky)
+cd $ROOTFS_TOP_FOLDER/cyclone5
 source poky/oe-init-build-env ./build
 echo 'MACHINE = "cyclone5"' >> conf/local.conf
 echo 'BBLAYERS += " ${TOPDIR}/../meta-intel-fpga "' >> conf/bblayers.conf
 # Uncomment next line to add more packages to the image
-# echo 'CORE_IMAGE_EXTRA_INSTALL += "openssh gdbserver"' >> conf/local.conf
+echo 'CORE_IMAGE_EXTRA_INSTALL += "openssh gdbserver"' >> conf/local.conf
 bitbake core-image-minimal
-ln -s $ROOTFS_TOP/cv/build/tmp/deploy/images/cyclone5/core-image-minimal-cyclone5.tar.gz $LINUX_BIN/a9/
+ln -s $ROOTFS_TOP_FOLDER/cyclone5/build/tmp/deploy/images/cyclone5/core-image-minimal-cyclone5.tar.gz $LINUX_BIN_DIR/a9/
 
+# Go to the script folder and prepare SD Card image writer script 
+cd $BUILD_ENV_FOLDER/scripts 
+# wget https://releases.rocketboards.org/2021.04/gsrd/tools/make_sdimage_p3.py
+chmod +x make_sdimage_p3.py
 
-# Start preparing the SD Card image
+# Create sd card top folder
 cd $BUILD_ENV_FOLDER #
 sudo rm -rf sd_card && mkdir sd_card && cd sd_card
+# Prepare the FAT partition
 mkdir sdfs &&  cd sdfs
 export SD_CARD_FS=`pwd`
+cp $LINUX_BIN_DIR/a9/zImage .
+cp $LINUX_BIN_DIR/a9/socfpga_cyclone5_socdk.dtb .
+mkdir extlinux
+echo "LABEL Linux Default" > extlinux/extlinux.conf
+echo "    KERNEL ../zImage" >> extlinux/extlinux.conf
+echo "    FDT ../socfpga_cyclone5_kfb_dual_sdram.dtb" >> extlinux/extlinux.conf
+echo "    APPEND root=/dev/mmcblk0p2 rw rootwait earlyprintk console=ttyS0,115200n8" >> extlinux/extlinux.conf
 
-
-
+cd $BUILD_ENV_FOLDER/sd_card
+sudo rm -rf rootfs
+mkdir rootfs && cd rootfs
+sudo tar xf $LINUX_BIN/a9/core-image-minimal-cyclone5.tar.gz
+sudo rm -rf lib/modules/*
+sudo cp -r $LINUX_BIN/a9/modules/* lib/modules  
 
 
 
