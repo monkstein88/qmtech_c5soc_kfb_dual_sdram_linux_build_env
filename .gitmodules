@@ -2,3 +2,7 @@
 	path = SOURCES/qmtech-c5soc-kfb-dual-sdram-ghrd
 	url = https://github.com/monkstein88/qmtech-c5soc-kfb-dual-sdram-ghrd.git
 	branch = main
+[submodule "SOURCES/u-boot-socfpga"]
+	path = SOURCES/u-boot-socfpga
+	url = https://github.com/monkstein88/u-boot-socfpga.git
+	branch = socfpga_v2024.07_qmtech_c5soc_kfb_dual_sdram
