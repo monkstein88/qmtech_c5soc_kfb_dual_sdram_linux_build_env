@@ -1,0 +1,4 @@
+[submodule "SOURCES/qmtech-c5soc-kfb-dual-sdram-ghrd"]
+	path = SOURCES/qmtech-c5soc-kfb-dual-sdram-ghrd
+	url = https://github.com/monkstein88/qmtech-c5soc-kfb-dual-sdram-ghrd.git
+	branch = main
