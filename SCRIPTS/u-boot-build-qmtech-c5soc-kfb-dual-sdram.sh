@@ -17,6 +17,7 @@ export ROOTFS_SRC_DIR="$BUILD_TOP_FOLDER/SOURCES/rootfs-socfpga"                
 
 export UBOOT_BUILD_DIR="$BUILD_TOP_FOLDER/BUILD/u-boot-socfpga"
 export LINUX_BUILD_DIR="$BUILD_TOP_FOLDER/BUILD/linux-socfpga"
+export ROOTFS_BUILD_DIR="$BUILD_TOP_FOLDER/BUILD/rootfs-socfpga"
 
 # This must be adjusted/configured to reference the actual SD Card Device:
 export SDCARD_DEV=/dev/sdb
@@ -81,8 +82,10 @@ echo 'hostname:pn-base-files = "qmtech-c5soc-kfb"' >> conf/local.conf  # Yocto 3
 echo 'BBLAYERS += " ${TOPDIR}/../meta-intel-fpga "' >> conf/bblayers.conf
 # Uncomment next line to add more packages to the image
 echo 'CORE_IMAGE_EXTRA_INSTALL += "openssh gdbserver"' >> conf/local.conf
+# Redirect ALL build output to a separate directory
+echo 'TMPDIR = "${ROOTFS_BUILD_DIR}"' >> conf/local.conf
 bitbake base-files
-bitbake core-image-minimal
+bitbake core-image-base
 sync
 
 # Start preparing/linking the produced binaries
