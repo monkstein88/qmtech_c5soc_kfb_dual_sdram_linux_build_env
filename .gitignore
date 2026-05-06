@@ -1,2 +1,6 @@
 # Ignore the wholesome .img file for SD Card flashing
 /SD_CARD/*.img
+/SD_CARD/linux-bin/
+/SD_CARD/rootfs/
+/SD_CARD/uboot/
+/SD_CARD/sdfs/
